@@ -39,3 +39,94 @@ npm run start -- --url=https://example.com/ --consider-trusted=www.other-domain.
 ```
 
 All of the flags above can be combined freely.
+
+## Example output of basic test
+```
+$ npm run start -- --url=https://bond-agency.com/ -l
+
+> @ start /dependency-checker
+> node index.js "--url=https://bond-agency.com/" "-l"
+
+Starting the test...
+Loading page...
+Closing the page...
+Collecting whois data for cross-domains...
+Collecting whois data of document sources...
+Collecting whois data of stylesheet sources...
+Collecting whois data of script sources...
+Collecting whois data of image sources...
+Collecting whois data of font sources...
+Printing results...
+
+Resource type: document
+Total: 1
+Same origin: 1
+Cross-origin: 0
+Cross-origin percentage: 0.00%
+
+Resource type: stylesheet
+Total: 3
+Same origin: 3
+Cross-origin: 0
+Cross-origin percentage: 0.00%
+
+Resource type: script
+Total: 7
+Same origin: 4
+Cross-origin: 3
+Cross-origin percentage: 42.86%
+Cross origin resources:
+
+  URL: https://code.jquery.com/jquery-2.2.0.min.js
+  Owner data:
+    Registrant Name:
+    Registrant Organization:
+    Registrant Country:
+
+  URL: https://www.googletagmanager.com/gtm.js?id=GTM-5M8X4L8
+  Owner data:
+    Registrant Name: DNS Admin
+    Registrant Organization: Google Inc.
+    Registrant Country: US
+
+  URL: https://www.google-analytics.com/analytics.js
+  Owner data:
+    Registrant Name:
+    Registrant Organization:
+    Registrant Country:
+
+Resource type: image
+Total: 19
+Same origin: 17
+Cross-origin: 2
+Cross-origin percentage: 10.53%
+Cross origin resources:
+
+  URL: https://www.google-analytics.com/r/collect?v=1&_v=j66&a=689738782&t=pageview&_s=1&dl=https%3A%2F%2F...
+  Owner data:
+    Registrant Name:
+    Registrant Organization:
+    Registrant Country:
+
+  URL: https://stats.g.doubleclick.net/r/collect?v=1&aip=1&t=dc&_r=3&tid=UA-23096829-1&cid=1530918270.1519...
+  Owner data:
+    Registrant Name:
+    Registrant Organization:
+    Registrant Country:
+
+Resource type: font
+Total: 4
+Same origin: 4
+Cross-origin: 0
+Cross-origin percentage: 0.00%
+
+#####################################################
+Total requests: 34
+Total same domain requests: 29
+Total cross-origin requests: 5
+Total cross-origin percentage: 14.71%
+#####################################################
+
+Done!
+Test duration: 140453.791ms
+```
