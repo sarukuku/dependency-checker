@@ -102,10 +102,47 @@ function extractFiOwnerData (whoisData, domain) {
   return whoisObj
 }
 
+function extractJpOwnerData (whoisData, domain) {
+  // Pick only the lines we're interested in
+  let lines = whoisData.split('\n').filter(line => {
+    if (
+      line.includes('[Registrant]') ||
+      line.includes('[Name]')
+    ) {
+      return true
+    }
+  })
+
+  // Parse the data on the lines to objects
+  let whoisObj = {}
+  whoisObj.domain = domain
+  whoisObj.registrantName = ''
+  whoisObj.registrantOrganization = ''
+  whoisObj.registrantCountry = ''
+
+  lines.forEach(line => {
+    let t = line.split(']')
+    if (t.length > 1) {
+      t.shift()
+    }
+    t = t.join('').trim()
+
+    if (line.includes('[Registrant]')) {
+      whoisObj.registrantOrganization = t
+    } else if (line.includes('[Name]')) {
+      whoisObj.registrantName = t
+    }
+  })
+
+  return whoisObj
+}
+
 exports.getOwnerData = async function (domain) {
   let data = await getWhoisData(domain)
   if (domain.endsWith('.fi')) {
     return extractFiOwnerData(data, domain)
+  } else if (domain.endsWith('.jp')) {
+    return extractJpOwnerData(data, domain)
   } else {
     return extractOwnerData(data, domain)
   }
@@ -151,10 +188,8 @@ exports.whoisDataValid = function (whoisObj) {
       whoisObj.registrantCountry
     )
   ) {
-    console.log(whoisObj)
     return true
   }
 
-  console.log(whoisObj)
   return false
 }
