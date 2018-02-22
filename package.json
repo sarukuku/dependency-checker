@@ -6,6 +6,7 @@
     "node": ">=9.3"
   },
   "dependencies": {
+    "async": "^2.6.0",
     "parse-domain": "^2.0.0",
     "puppeteer": "^1.1.0",
     "url-parse": "^1.2.0",

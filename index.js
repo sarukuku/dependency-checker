@@ -2,6 +2,7 @@
 
 const utils = require('./utils.js')
 const argv = require('yargs').argv
+const async = require('async')
 const puppeteer = require('puppeteer')
 const devices = require('puppeteer/DeviceDescriptors')
 const iPadPro = devices['iPad Pro landscape'];
@@ -90,18 +91,29 @@ const iPadPro = devices['iPad Pro landscape'];
     for (let key in assets) {
       if (assets.hasOwnProperty(key)) {
         console.log(`Collecting whois data of ${key} sources...`)
-        for (let urlObj of assets[key].urls) {
-          let rootDomain = utils.getRootDomain(urlObj.url)
+        await new Promise(resolve => {
+          // Limit concurrent whois requests to 30
+          async.mapLimit(assets[key].urls, 30, async (urlObj) => {
+            let rootDomain = utils.getRootDomain(urlObj.url)
 
-          // Fetch whois data only for cross-domains
-          if (urlObj.crossOrigin && !collectedWhoisData[rootDomain]) {
-            collectedWhoisData[rootDomain] = await utils.getOwnerData(rootDomain)
-          }
+            // Fetch whois data only for cross-origins
+            if (urlObj.crossOrigin && !utils.whoisDataValid(collectedWhoisData[rootDomain])) {
+              let whoisData = await utils.getOwnerData(rootDomain)
+              if (utils.whoisDataValid(whoisData)) {
+                collectedWhoisData[rootDomain] = whoisData
+              }
+            }
 
-          if (urlObj.crossOrigin) {
-            urlObj.ownerData = collectedWhoisData[rootDomain]
-          }
-        }
+            if (urlObj.crossOrigin) {
+              urlObj.ownerData = collectedWhoisData[rootDomain]
+            }
+          }, (err, results) => {
+            if (err) {
+              console.log(err)
+            }
+            resolve()
+          })
+        })
       }
     }
   }
@@ -130,9 +142,9 @@ Cross-origin percentage: ${(assets[key].crossOriginCount / assets[key].totalCoun
             console.log(`
   URL: ${utils.truncate.apply(urlObj.url, [100, false])}
   Owner data:
-    Registrant Name: ${urlObj.ownerData.registrantName}
-    Registrant Organization: ${urlObj.ownerData.registrantOrganization}
-    Registrant Country: ${urlObj.ownerData.registrantCountry}`)
+    Registrant Name: ${(urlObj.ownerData && urlObj.ownerData.registrantName) ? urlObj.ownerData.registrantName : ''}
+    Registrant Organization: ${(urlObj.ownerData && urlObj.ownerData.registrantOrganization) ? urlObj.ownerData.registrantOrganization : ''}
+    Registrant Country: ${(urlObj.ownerData && urlObj.ownerData.registrantCountry) ? urlObj.ownerData.registrantCountry : ''}`)
           }
         })
       }
