@@ -2,6 +2,9 @@
   "scripts": {
     "start": "node index.js"
   },
+  "engines": {
+    "node": ">=9.3"
+  },
   "dependencies": {
     "parse-domain": "^2.0.0",
     "puppeteer": "^1.1.0",

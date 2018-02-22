@@ -1,6 +1,17 @@
 # Third-Party Dependency Checker
 A command line tool that checks your web page's dependencies, what percentage of them are cross-origin or cross-domain and who's in control of them.
 
+## How to install
+Clone or download the repository and run `yarn` in it.
+
+## Dependencies
+The app has been tested only on a macOS High Sierra and has the followind dependencies:
+- availability of `/bin/bash`
+- availability of `yarn` command on `/bin/bash`
+- availability of `whois`command on `/bin/bash` 
+- node version >= 9.3.0
+- a good network connection
+
 ## How to use
 Basic test.
 ```

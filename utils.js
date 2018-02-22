@@ -6,7 +6,7 @@ const parseDomain = require('parse-domain')
 
 function getWhoisData (domain) {
   return new Promise(resolve => {
-    const whois = spawn('whois', [ '-R', domain ])
+    const whois = spawn('whois', [ '-R', domain ], {shell: '/bin/bash'})
     whois.stdout.on('data', data => {
       resolve(data.toString())
     })

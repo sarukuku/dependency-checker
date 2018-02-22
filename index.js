@@ -30,8 +30,6 @@ const iPadPro = devices['iPad Pro landscape'];
     })
   }
 
-  console.log(compareToOrigins)
-
   let assets = []
   await page.setRequestInterception(true)
   page.on('request', request => {
