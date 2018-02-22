@@ -130,3 +130,7 @@ Total cross-origin percentage: 14.71%
 Done!
 Test duration: 30677.906ms
 ```
+
+## Miscellaneous notes
+
+The app caches succesfully parsed whois query results in a persistent sqlite3 database. To clear the cache simply delete the file named `whois-cache.sqlite3` from the repository root.
