@@ -91,9 +91,9 @@ Cross origin resources:
 
   URL: https://www.google-analytics.com/analytics.js
   Owner data:
-    Registrant Name:
-    Registrant Organization:
-    Registrant Country:
+    Registrant Name: Domain Administrator
+    Registrant Organization: Google LLC
+    Registrant Country: US
 
 Resource type: image
 Total: 19
@@ -102,13 +102,13 @@ Cross-origin: 2
 Cross-origin percentage: 10.53%
 Cross origin resources:
 
-  URL: https://www.google-analytics.com/r/collect?v=1&_v=j66&a=689738782&t=pageview&_s=1&dl=https%3A%2F%2F...
+  URL: https://www.google-analytics.com/r/collect?v=1&_v=j66&a=336758200&t=pageview&_s=1&dl=https%3A%2F%2F...
   Owner data:
-    Registrant Name:
-    Registrant Organization:
-    Registrant Country:
+    Registrant Name: Domain Administrator
+    Registrant Organization: Google LLC
+    Registrant Country: US
 
-  URL: https://stats.g.doubleclick.net/r/collect?v=1&aip=1&t=dc&_r=3&tid=UA-23096829-1&cid=1530918270.1519...
+  URL: https://stats.g.doubleclick.net/r/collect?v=1&aip=1&t=dc&_r=3&tid=UA-23096829-1&cid=1531247133.1519...
   Owner data:
     Registrant Name:
     Registrant Organization:
@@ -128,5 +128,5 @@ Total cross-origin percentage: 14.71%
 #####################################################
 
 Done!
-Test duration: 140453.791ms
+Test duration: 30677.906ms
 ```
