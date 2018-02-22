@@ -6,10 +6,20 @@ const parseDomain = require('parse-domain')
 
 function getWhoisData (domain) {
   return new Promise(resolve => {
+    // Spawn a new process.
     const whois = spawn('whois', [ '-R', domain ], {shell: '/bin/bash'})
+
+    // Resolve with results.
     whois.stdout.on('data', data => {
+      clearTimeout(timerId)
       resolve(data.toString())
     })
+
+    // Limit the child process execution time to 3 seconds.
+    const timerId = setTimeout(() => {
+      whois.kill()
+      resolve('')
+    }, 3000)
   })
 }
 
