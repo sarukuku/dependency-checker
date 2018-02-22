@@ -1,6 +1,7 @@
 'use strict'
 
 const utils = require('./utils.js')
+const whoisDb = require('./db.js')
 const argv = require('yargs').argv
 const async = require('async')
 const puppeteer = require('puppeteer')
@@ -12,6 +13,10 @@ const iPadPro = devices['iPad Pro landscape'];
     console.log('You\'ll need to pass a URL.')
     return
   }
+
+  // Open on init whois sqlite3 database.
+  console.log('Opening / initializing whois cache database...')
+  whoisDb.openOrCreate()
 
   console.time('Test duration')
   console.log('Starting the test...')
@@ -118,9 +123,12 @@ const iPadPro = devices['iPad Pro landscape'];
     }
   }
 
+  // Close the database as we don't need it anymore.
+  whoisDb.close()
+
   // Log counts per resource type
   console.log('Printing results...')
-  await utils.sleep(2000)
+  // await utils.sleep(1000)
   let totalRequests = 0
   let totalSameOriginRequests = 0
   let totalCrossOriginRequests = 0

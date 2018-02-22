@@ -3,6 +3,7 @@
 const { spawn } = require('child_process')
 const URL = require('url-parse')
 const parseDomain = require('parse-domain')
+const whoisDb = require('./db.js')
 
 function getWhoisData (domain) {
   return new Promise(resolve => {
@@ -138,14 +139,30 @@ function extractJpOwnerData (whoisData, domain) {
 }
 
 exports.getOwnerData = async function (domain) {
-  let data = await getWhoisData(domain)
-  if (domain.endsWith('.fi')) {
-    return extractFiOwnerData(data, domain)
-  } else if (domain.endsWith('.jp')) {
-    return extractJpOwnerData(data, domain)
-  } else {
-    return extractOwnerData(data, domain)
+  /**
+   * Check the local whois database for the
+   * data before running a new whois query
+   */
+  let data = await whoisDb.readDomain(domain)
+  if (data) {
+    return data
   }
+
+  data = await getWhoisData(domain)
+  if (domain.endsWith('.fi')) {
+    data = extractFiOwnerData(data, domain)
+  } else if (domain.endsWith('.jp')) {
+    data = extractJpOwnerData(data, domain)
+  } else {
+    data = extractOwnerData(data, domain)
+  }
+
+  // Save whois data to DB only if it's valid
+  if (exports.whoisDataValid(data)) {
+    whoisDb.insertDomain(data)
+  }
+
+  return data
 }
 
 exports.truncate = function (n, useWordBoundary) {
