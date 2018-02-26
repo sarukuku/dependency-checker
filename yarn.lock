@@ -954,10 +954,6 @@ which@^1.2.9:
   dependencies:
     isexe "^2.0.0"
 
-whois-ux@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/whois-ux/-/whois-ux-0.0.2.tgz#1e4e5e1315aaa200980a4d896cd76f7bbce8863e"
-
 wide-align@^1.1.0:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/wide-align/-/wide-align-1.1.2.tgz#571e0f1b0604636ebc0dfc21b0339bbe31341710"
