@@ -126,44 +126,15 @@ const iPadPro = devices['iPad Pro landscape'];
   // Close the database as we don't need it anymore.
   whoisDb.close()
 
-  // Log counts per resource type
+  // Print results to stdout based on selected output.
   !argv.silent && console.log('Printing results...')
-  let totalRequests = 0
-  let totalSameOriginRequests = 0
-  let totalCrossOriginRequests = 0
-  for (let key in assets) {
-    if (assets.hasOwnProperty(key)) {
-      totalRequests += assets[key].totalCount
-      totalSameOriginRequests += assets[key].sameOriginCount
-      totalCrossOriginRequests += assets[key].crossOriginCount
-      console.log(`
-Resource type: ${key}
-Total: ${assets[key].totalCount}
-Same origin: ${assets[key].sameOriginCount}
-Cross-origin: ${assets[key].crossOriginCount}
-Cross-origin percentage: ${(assets[key].crossOriginCount / assets[key].totalCount * 100).toFixed(2)}%`)
-      if (argv.l && assets[key].crossOriginCount) {
-        console.log(`Cross origin resources:`)
-        assets[key].urls.forEach(urlObj => {
-          if (urlObj.crossOrigin) {
-            console.log(`
-  URL: ${utils.truncate.apply(urlObj.url, [100, false])}
-  Owner data:
-    Registrant Name: ${(urlObj.ownerData && urlObj.ownerData.registrantName) ? urlObj.ownerData.registrantName : ''}
-    Registrant Organization: ${(urlObj.ownerData && urlObj.ownerData.registrantOrganization) ? urlObj.ownerData.registrantOrganization : ''}
-    Registrant Country: ${(urlObj.ownerData && urlObj.ownerData.registrantCountry) ? urlObj.ownerData.registrantCountry : ''}`)
-          }
-        })
-      }
-    }
+  if (argv.output === 'json') {
+    utils.printResultsAsJson(assets)
+  } else {
+    utils.printResultsToConsole(assets)
   }
-  console.log(`
-#####################################################
-Total requests: ${totalRequests}
-Total ${argv.ignoreSubdomains ? 'same root domain' : 'same domain'} requests: ${totalSameOriginRequests}
-Total ${argv.ignoreSubdomains ? 'cross-domain' : 'cross-origin'} requests: ${totalCrossOriginRequests}
-Total ${argv.ignoreSubdomains ? 'cross-domain' : 'cross-origin'} percentage: ${(totalCrossOriginRequests / totalRequests * 100).toFixed(2)}%
-#####################################################`)
+
+  // End the test.
   !argv.silent && console.log('All done!')
   !argv.silent && console.timeEnd('Test duration')
 })()
