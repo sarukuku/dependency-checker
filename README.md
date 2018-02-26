@@ -15,27 +15,32 @@ The app has been tested only on a macOS High Sierra and has the followind depend
 ## How to use
 Basic test.
 ```
-npm run start -- --url=https://example.com/
+yarn start --url=https://example.com/
 ```
 
 Wait 5000 ms after initial page load to give the page time f.ex. to lazyload scripts, styles and media.
 ```
-npm run start -- --url=https://example.com/ --wait=5000
+yarn start --url=https://example.com/ --wait=5000
 ```
 
 Print long output (query organizational data for cross-origins or cross-domains with native `whois` depending on the --ignore-subdomains flag).
 ```
-npm run start -- --url=https://example.com/ -l
+yarn start --url=https://example.com/ -l
 ```
 
 Ignore subdomains when doing the cross-origin comparison (basically the test becomes cross-domain comparison instead of cross-origin).
 ```
-npm run start -- --url=https://example.com/ --ignore-subdomains
+yarn start --url=https://example.com/ --ignore-subdomains
 ```
 
 Consider other domains as same-origin or same-domain (=trusted). This helps f.ex. in cases where you know that the organization that owns the domain the test is run for also owns other domains that you don't want to appear as cross-origin or cross-domain to the dependency checker. This helps in narrowing the results down to the actual third-party organizations more easily.
 ```
-npm run start -- --url=https://example.com/ --consider-trusted=www.other-domain.com --consider-trusted=another-domain.net
+yarn start --url=https://example.com/ --consider-trusted=www.other-domain.com --consider-trusted=another-domain.net
+```
+
+Silent or quiet mode. Don't show progress or error messages. Makes Third-Party Dependency Checker mute. It will still output the data you ask for, potentially even to the terminal/stdout unless you redirect it.
+```
+yarn start --silent
 ```
 
 All of the flags above can be combined freely.
