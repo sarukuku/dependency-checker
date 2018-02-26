@@ -1,5 +1,6 @@
 'use strict'
 
+const argv = require('yargs').argv
 const sqlite3 = require('sqlite3').verbose()
 let db
 
@@ -33,7 +34,7 @@ exports.readDomain = (domain) => {
   return new Promise(resolve => {
     db.get(`SELECT * FROM whois WHERE domain = '${domain}'`, (err, row) => {
       if (err) {
-        console.error(err.message)
+        !argv.silent && console.error(err.message)
       }
 
       resolve(row)

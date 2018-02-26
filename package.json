@@ -12,5 +12,6 @@
     "sqlite3": "^3.1.13",
     "url-parse": "^1.2.0",
     "yargs": "^11.0.0"
-  }
+  },
+  "license": "MIT"
 }

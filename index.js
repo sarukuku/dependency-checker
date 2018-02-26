@@ -10,16 +10,16 @@ const iPadPro = devices['iPad Pro landscape'];
 
 (async () => {
   if (!argv.url) {
-    console.log('You\'ll need to pass a URL.')
+    !argv.silent && console.log('You\'ll need to pass a URL.')
     return
   }
 
   // Open on init whois sqlite3 database.
-  console.log('Opening / initializing whois cache database...')
+  !argv.silent && console.log('Opening / initializing whois cache database...')
   whoisDb.openOrCreate()
 
-  console.time('Test duration')
-  console.log('Starting the test...')
+  !argv.silent && console.time('Test duration')
+  !argv.silent && console.log('Starting the test...')
   const browser = await puppeteer.launch()
   const page = await browser.newPage()
   await page.emulate(iPadPro)
@@ -72,7 +72,7 @@ const iPadPro = devices['iPad Pro landscape'];
   })
 
   // Navigate to page
-  console.log('Loading page...')
+  !argv.silent && console.log('Loading page...')
   /**
    * TODO: Check if the page was redirected f.ex.
    * from hs.fi to www.hs.fi and update the domain
@@ -82,20 +82,20 @@ const iPadPro = devices['iPad Pro landscape'];
 
   // Wait for given amount in ms
   if (argv.wait) {
-    console.log(`Waiting for ${argv.wait}ms...`)
+    !argv.silent && console.log(`Waiting for ${argv.wait}ms...`)
     await page.waitFor(argv.wait)
   }
 
-  console.log('Closing the page...')
+  !argv.silent && console.log('Closing the page...')
   await browser.close()
 
   // If -l (=long) is set --> Collect whois data
   if (argv.l) {
-    console.log('Collecting whois data for cross-domains...')
+    !argv.silent && console.log('Collecting whois data for cross-domains...')
     let collectedWhoisData = []
     for (let key in assets) {
       if (assets.hasOwnProperty(key)) {
-        console.log(`Collecting whois data of ${key} sources...`)
+        !argv.silent && console.log(`Collecting whois data of ${key} sources...`)
         await new Promise(resolve => {
           // Limit concurrent whois requests to 30
           async.mapLimit(assets[key].urls, 30, async (urlObj) => {
@@ -114,7 +114,7 @@ const iPadPro = devices['iPad Pro landscape'];
             }
           }, (err, results) => {
             if (err) {
-              console.log(err)
+              !argv.silent && console.log(err)
             }
             resolve()
           })
@@ -127,8 +127,7 @@ const iPadPro = devices['iPad Pro landscape'];
   whoisDb.close()
 
   // Log counts per resource type
-  console.log('Printing results...')
-  // await utils.sleep(1000)
+  !argv.silent && console.log('Printing results...')
   let totalRequests = 0
   let totalSameOriginRequests = 0
   let totalCrossOriginRequests = 0
@@ -164,8 +163,7 @@ Total requests: ${totalRequests}
 Total ${argv.ignoreSubdomains ? 'same root domain' : 'same domain'} requests: ${totalSameOriginRequests}
 Total ${argv.ignoreSubdomains ? 'cross-domain' : 'cross-origin'} requests: ${totalCrossOriginRequests}
 Total ${argv.ignoreSubdomains ? 'cross-domain' : 'cross-origin'} percentage: ${(totalCrossOriginRequests / totalRequests * 100).toFixed(2)}%
-#####################################################
-
-Done!`)
-  console.timeEnd('Test duration')
+#####################################################`)
+  !argv.silent && console.log('All done!')
+  !argv.silent && console.timeEnd('Test duration')
 })()
