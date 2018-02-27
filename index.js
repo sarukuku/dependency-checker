@@ -10,95 +10,91 @@ const iPadPro = devices['iPad Pro landscape'];
 
 (async () => {
   if (!argv.url) {
-    !argv.silent && console.log('You\'ll need to pass a URL.')
+    utils.log('You\'ll need to pass a URL.')
     return
   }
 
   // Open on init whois sqlite3 database.
-  !argv.silent && console.log('Opening / initializing whois cache database...')
+  utils.log('Opening / initializing whois cache database...')
   whoisDb.openOrCreate()
 
-  !argv.silent && console.time('Test duration')
-  !argv.silent && console.log('Starting the test...')
+  utils.startTime('Test duration')
+  utils.log('Starting the test...')
   const browser = await puppeteer.launch()
   const page = await browser.newPage()
   await page.emulate(iPadPro)
 
-  let compareToOrigins = [(argv.ignoreSubdomains) ? utils.getRootDomain(argv.url) : utils.getDomain(argv.url)]
-  // Push other trusted domain to the compareToOrigins array.
+  // Initialize the object that will hold all data
+  let data = { resources: {} }
+  await page.setRequestInterception(true)
+  page.on('request', request => {
+    // Save request data and group the requests by type.
+    if (data.resources[request.resourceType()]) {
+      data.resources[request.resourceType()].requests.push({
+        url: request.url(),
+        method: request.method(),
+        headers: request.headers()
+      })
+    } else {
+      data.resources[request.resourceType()] = {}
+      data.resources[request.resourceType()].requests = [{
+        url: request.url(),
+        method: request.method(),
+        headers: request.headers()
+      }]
+    }
+
+    // Allow the request to continue.
+    request.continue()
+  })
+
+  // Navigate to page
+  utils.log('Loading page...')
+  await page.goto(argv.url)
+
+  // Wait for given amount in ms
+  if (argv.wait) {
+    utils.log(`Waiting for ${argv.wait}ms...`)
+    await page.waitFor(argv.wait)
+  }
+
+  // Grab the URL we ended up in (due to possible redirects)
+  const finalUrl = await page.url()
+  utils.log(`URL given as a parameter: ${argv.url} Document downloaded from URL: ${finalUrl}`)
+
+  // Close the page
+  utils.log('Closing the page...')
+  await browser.close()
+
+  // Figure out the compare to origins
+  let compareToUrl = (argv.followRedirects) ? finalUrl : argv.url
+  let compareToOrigins = [(argv.ignoreSubdomains) ? utils.getRootDomain(compareToUrl) : utils.getDomain(compareToUrl)]
+
+  // Push other trusted domains to the compareToOrigins array (if any).
   if (argv.considerTrusted && argv.considerTrusted.length > 0) {
+    // Make it an array even if there's only one value passed.
     if (!Array.isArray(argv.considerTrusted)) {
       argv.considerTrusted = [argv.considerTrusted]
     }
-
+    // Handle all domains in the array.
     argv.considerTrusted.forEach(domain => {
       compareToOrigins.push((argv.ignoreSubdomains) ? utils.getRootDomain(domain) : utils.getDomain(domain))
     })
   }
 
-  let assets = []
-  await page.setRequestInterception(true)
-  page.on('request', request => {
-    let requestOrigin = (argv.ignoreSubdomains) ? utils.getRootDomain(request.url()) : utils.getDomain(request.url())
-
-    if (assets[request.resourceType()]) {
-      assets[request.resourceType()].totalCount += 1
-      if (compareToOrigins.includes(requestOrigin)) {
-        assets[request.resourceType()].sameOriginCount += 1
-      } else {
-        assets[request.resourceType()].crossOriginCount += 1
-      }
-      assets[request.resourceType()].urls.push({
-        url: request.url(),
-        crossOrigin: !(compareToOrigins.includes(requestOrigin))
-      })
-    } else {
-      assets[request.resourceType()] = {}
-      assets[request.resourceType()].totalCount = 1
-      if (compareToOrigins.includes(requestOrigin)) {
-        assets[request.resourceType()].sameOriginCount = 1
-        assets[request.resourceType()].crossOriginCount = 0
-      } else {
-        assets[request.resourceType()].crossOriginCount = 1
-        assets[request.resourceType()].sameOriginCount = 0
-      }
-      assets[request.resourceType()].urls = [{
-        url: request.url(),
-        crossOrigin: !(compareToOrigins.includes(requestOrigin))
-      }]
-    }
-
-    request.continue()
-  })
-
-  // Navigate to page
-  !argv.silent && console.log('Loading page...')
-  /**
-   * TODO: Check if the page was redirected f.ex.
-   * from hs.fi to www.hs.fi and update the domain
-   * we're comparing the loaded resources to.
-   */
-  await page.goto(argv.url)
-
-  // Wait for given amount in ms
-  if (argv.wait) {
-    !argv.silent && console.log(`Waiting for ${argv.wait}ms...`)
-    await page.waitFor(argv.wait)
-  }
-
-  !argv.silent && console.log('Closing the page...')
-  await browser.close()
+  // Analyze (=enrich) the gathered data a bit.
+  data = utils.analyzeData(data, compareToOrigins)
 
   // If -l (=long) is set --> Collect whois data
   if (argv.l) {
-    !argv.silent && console.log('Collecting whois data for cross-domains...')
+    utils.log('Collecting whois data for cross-domains...')
     let collectedWhoisData = []
-    for (let key in assets) {
-      if (assets.hasOwnProperty(key)) {
-        !argv.silent && console.log(`Collecting whois data of ${key} sources...`)
+    for (let key in data.resources) {
+      if (data.resources.hasOwnProperty(key)) {
+        utils.log(`Collecting whois data of ${key} sources...`)
         await new Promise(resolve => {
-          // Limit concurrent whois requests to 30
-          async.mapLimit(assets[key].urls, 30, async (urlObj) => {
+          // Limit concurrent whois data.resources to 30
+          async.mapLimit(data.resources[key].requests, 30, async (urlObj) => {
             let rootDomain = utils.getRootDomain(urlObj.url)
 
             // Fetch whois data only for cross-origins
@@ -114,7 +110,7 @@ const iPadPro = devices['iPad Pro landscape'];
             }
           }, (err, results) => {
             if (err) {
-              !argv.silent && console.log(err)
+              utils.log(err)
             }
             resolve()
           })
@@ -127,14 +123,14 @@ const iPadPro = devices['iPad Pro landscape'];
   whoisDb.close()
 
   // Print results to stdout based on selected output.
-  !argv.silent && console.log('Printing results...')
+  utils.log('Printing results...')
   if (argv.output === 'json') {
-    utils.printResultsAsJson(assets)
+    utils.printResultsAsJson(data)
   } else {
-    utils.printResultsToConsole(assets)
+    utils.printResultsToConsole(data)
   }
 
   // End the test.
-  !argv.silent && console.log('All done!')
-  !argv.silent && console.timeEnd('Test duration')
+  utils.log('All done!')
+  utils.endTime('Test duration')
 })()

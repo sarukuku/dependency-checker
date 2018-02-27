@@ -18,6 +18,11 @@ Basic test.
 yarn start --url=https://example.com/
 ```
 
+Follow redirects. By default the URL you give will be used in the cross-origin or cross-domain comparisons as is. A lot of domains have redirects in place that look f.ex. like this `http://example.com` -> `https://www.example.com`. This means that all resources the page donwloads from `www.example.com` are considered cross-origin as you told to compare exactly to `example.com`. By setting the `--follow-redirects` flag the comparison URL will be automatically updated to the URL the initial document was downloaded from.
+```
+yarn start --url=https://example.com/ --follow-redirects
+```
+
 Wait 5000 ms after initial page load to give the page time f.ex. to lazyload scripts, styles and media.
 ```
 yarn start --url=https://example.com/ --wait=5000

@@ -10,7 +10,7 @@ function getWhoisData (domain) {
   return new Promise(resolve => {
     // Spawn a new process.
     let collectedData = ''
-    const whois = spawn('whois', [ '-R', domain ], {shell: '/bin/bash'})
+    const whois = spawn('whois', [ domain ], {shell: '/bin/bash'})
 
     // Collect results to a variable.
     whois.stdout.on('data', data => {
@@ -212,31 +212,25 @@ exports.whoisDataValid = function (whoisObj) {
   return false
 }
 
-exports.printResultsToConsole = assets => {
-  let totalRequests = 0
-  let totalSameOriginRequests = 0
-  let totalCrossOriginRequests = 0
-  for (let key in assets) {
-    if (assets.hasOwnProperty(key)) {
-      totalRequests += assets[key].totalCount
-      totalSameOriginRequests += assets[key].sameOriginCount
-      totalCrossOriginRequests += assets[key].crossOriginCount
+exports.printResultsToConsole = data => {
+  for (let key in data.resources) {
+    if (data.resources.hasOwnProperty(key)) {
       console.log(`
 Resource type: ${key}
-Total: ${assets[key].totalCount}
-Same origin: ${assets[key].sameOriginCount}
-Cross-origin: ${assets[key].crossOriginCount}
-Cross-origin percentage: ${(assets[key].crossOriginCount / assets[key].totalCount * 100).toFixed(2)}%`)
-      if (argv.l && assets[key].crossOriginCount) {
+Total: ${data.resources[key].totalCount}
+Same origin: ${data.resources[key].sameOriginCount}
+Cross-origin: ${data.resources[key].crossOriginCount}
+Cross-origin percentage: ${data.resources[key].crossOriginPercentage}%`)
+      if (argv.l && data.resources[key].crossOriginCount) {
         console.log(`Cross origin resources:`)
-        assets[key].urls.forEach(urlObj => {
-          if (urlObj.crossOrigin) {
+        data.resources[key].requests.forEach(requestObj => {
+          if (requestObj.crossOrigin) {
             console.log(`
-  URL: ${exports.truncate.apply(urlObj.url, [100, false])}
+  URL: ${exports.truncate.apply(requestObj.url, [100, false])}
   Owner data:
-    Registrant Name: ${(urlObj.ownerData && urlObj.ownerData.registrantName) ? urlObj.ownerData.registrantName : ''}
-    Registrant Organization: ${(urlObj.ownerData && urlObj.ownerData.registrantOrganization) ? urlObj.ownerData.registrantOrganization : ''}
-    Registrant Country: ${(urlObj.ownerData && urlObj.ownerData.registrantCountry) ? urlObj.ownerData.registrantCountry : ''}`)
+    Registrant Name: ${(requestObj.ownerData && requestObj.ownerData.registrantName) ? requestObj.ownerData.registrantName : ''}
+    Registrant Organization: ${(requestObj.ownerData && requestObj.ownerData.registrantOrganization) ? requestObj.ownerData.registrantOrganization : ''}
+    Registrant Country: ${(requestObj.ownerData && requestObj.ownerData.registrantCountry) ? requestObj.ownerData.registrantCountry : ''}`)
           }
         })
       }
@@ -244,31 +238,77 @@ Cross-origin percentage: ${(assets[key].crossOriginCount / assets[key].totalCoun
   }
   console.log(`
 #####################################################
-Total requests: ${totalRequests}
-Total ${argv.ignoreSubdomains ? 'same root domain' : 'same domain'} requests: ${totalSameOriginRequests}
-Total ${argv.ignoreSubdomains ? 'cross-domain' : 'cross-origin'} requests: ${totalCrossOriginRequests}
-Total ${argv.ignoreSubdomains ? 'cross-domain' : 'cross-origin'} percentage: ${(totalCrossOriginRequests / totalRequests * 100).toFixed(2)}%
+Total requests: ${data.totalRequests}
+Total ${argv.ignoreSubdomains ? 'same root domain' : 'same domain'} requests: ${data.totalSameOriginRequests}
+Total ${argv.ignoreSubdomains ? 'cross-domain' : 'cross-origin'} requests: ${data.totalCrossOriginRequests}
+Total ${argv.ignoreSubdomains ? 'cross-domain' : 'cross-origin'} percentage: ${data.crossOriginPercentage}%
 #####################################################`)
 }
 
-exports.printResultsAsJson = assets => {
-  let data = {
-    requests: {},
-    totalRequests: 0,
-    totalSameOriginRequests: 0,
-    totalCrossOriginRequests: 0,
-    crossOriginPercentage: null
-  }
-
-  for (let key in assets) {
-    data.totalRequests += assets[key].totalCount
-    data.totalSameOriginRequests += assets[key].sameOriginCount
-    data.totalCrossOriginRequests += assets[key].crossOriginCount
-    assets[key].crossOriginPercentage = (assets[key].crossOriginCount / assets[key].totalCount * 100).toFixed(2)
-    data.requests[key] = assets[key]
-  }
-
-  data.crossOriginPercentage = (data.totalCrossOriginRequests / data.totalRequests * 100).toFixed(2)
-
+exports.printResultsAsJson = data => {
   console.log(JSON.stringify(data))
+}
+
+exports.analyzeData = (data, compareToOrigins) => {
+  // Add new properties to data
+  data.totalRequests = 0
+  data.totalSameOriginRequests = 0
+  data.totalCrossOriginRequests = 0
+  data.crossOriginPercentage = null
+
+  // For each resource type
+  for (let resourceType in data.resources) {
+    // Add new properties to resource type
+    data.resources[resourceType].totalCount = 0
+    data.resources[resourceType].sameOriginCount = 0
+    data.resources[resourceType].crossOriginCount = 0
+    data.resources[resourceType].crossOriginPercentage = null
+
+    // Loop over all requests on it
+    data.resources[resourceType].requests.forEach(request => {
+      let requestOrigin = (argv.ignoreSubdomains) ? exports.getRootDomain(request.url) : exports.getDomain(request.url)
+
+      // Total count for single resource type
+      data.resources[resourceType].totalCount += 1
+
+      // Total counts for same-origin and cross-origin for single resource type
+      if (compareToOrigins.includes(requestOrigin)) {
+        data.resources[resourceType].sameOriginCount += 1
+      } else {
+        data.resources[resourceType].crossOriginCount += 1
+      }
+
+      // Mark each request as either cross-origin or not
+      request.crossOrigin = !(compareToOrigins.includes(requestOrigin))
+    })
+
+    // Calculate cross-origin percentage per resource type
+    data.resources[resourceType].crossOriginPercentage = parseFloat(
+      (data.resources[resourceType].crossOriginCount / data.resources[resourceType].totalCount * 100).toFixed(2)
+    )
+
+    // Count totals for all resources
+    data.totalRequests += data.resources[resourceType].totalCount
+    data.totalSameOriginRequests += data.resources[resourceType].sameOriginCount
+    data.totalCrossOriginRequests += data.resources[resourceType].crossOriginCount
+  }
+
+  // Calculate cross-origin percentage for whole data
+  data.crossOriginPercentage = parseFloat(
+    (data.totalCrossOriginRequests / data.totalRequests * 100).toFixed(2)
+  )
+
+  return data
+}
+
+exports.log = message => {
+  !argv.silent && console.log(message)
+}
+
+exports.startTime = id => {
+  !argv.silent && console.time(id)
+}
+
+exports.endTime = id => {
+  !argv.silent && console.timeEnd(id)
 }
