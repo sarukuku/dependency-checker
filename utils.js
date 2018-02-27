@@ -4,6 +4,7 @@ const { spawn } = require('child_process')
 const argv = require('yargs').argv
 const URL = require('url-parse')
 const parseDomain = require('parse-domain')
+const async = require('async')
 const whoisDb = require('./db.js')
 
 function getWhoisData (domain) {
@@ -160,7 +161,7 @@ exports.getOwnerData = async function (domain) {
 
   // Save whois data to DB only if it's valid
   if (exports.whoisDataValid(data)) {
-    whoisDb.insertDomain(data)
+    await whoisDb.insertDomain(data)
   }
 
   return data
@@ -228,9 +229,9 @@ Cross-origin percentage: ${data.resources[key].crossOriginPercentage}%`)
             console.log(`
   URL: ${exports.truncate.apply(requestObj.url, [100, false])}
   Owner data:
-    Registrant Name: ${(requestObj.ownerData && requestObj.ownerData.registrantName) ? requestObj.ownerData.registrantName : ''}
-    Registrant Organization: ${(requestObj.ownerData && requestObj.ownerData.registrantOrganization) ? requestObj.ownerData.registrantOrganization : ''}
-    Registrant Country: ${(requestObj.ownerData && requestObj.ownerData.registrantCountry) ? requestObj.ownerData.registrantCountry : ''}`)
+    Registrant Name: ${(requestObj.whoisData && requestObj.whoisData.registrantName) ? requestObj.whoisData.registrantName : ''}
+    Registrant Organization: ${(requestObj.whoisData && requestObj.whoisData.registrantOrganization) ? requestObj.whoisData.registrantOrganization : ''}
+    Registrant Country: ${(requestObj.whoisData && requestObj.whoisData.registrantCountry) ? requestObj.whoisData.registrantCountry : ''}`)
           }
         })
       }
@@ -311,4 +312,36 @@ exports.startTime = id => {
 
 exports.endTime = id => {
   !argv.silent && console.timeEnd(id)
+}
+
+exports.collectWhoisData = async data => {
+  let collectedWhoisData = []
+  for (let key in data.resources) {
+    exports.log(`Collecting whois data of ${key} sources...`)
+    await new Promise(resolve => {
+      // Limit concurrent whois queries to 30
+      async.mapLimit(data.resources[key].requests, 30, async (requestObj) => {
+        let rootDomain = exports.getRootDomain(requestObj.url)
+
+        // Fetch whois data only for cross-origins
+        if (requestObj.crossOrigin && !exports.whoisDataValid(collectedWhoisData[rootDomain])) {
+          let whoisData = await exports.getOwnerData(rootDomain)
+          if (exports.whoisDataValid(whoisData)) {
+            collectedWhoisData[rootDomain] = whoisData
+          }
+        }
+
+        if (requestObj.crossOrigin) {
+          requestObj.whoisData = collectedWhoisData[rootDomain]
+        }
+      }, (err, results) => {
+        if (err) {
+          exports.log(err)
+        }
+        resolve()
+      })
+    })
+  }
+
+  return data
 }

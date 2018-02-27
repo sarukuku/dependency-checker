@@ -3,7 +3,6 @@
 const utils = require('./utils.js')
 const whoisDb = require('./db.js')
 const argv = require('yargs').argv
-const async = require('async')
 const puppeteer = require('puppeteer')
 const devices = require('puppeteer/DeviceDescriptors')
 const iPadPro = devices['iPad Pro landscape'];
@@ -13,10 +12,6 @@ const iPadPro = devices['iPad Pro landscape'];
     utils.log('You\'ll need to pass a URL.')
     return
   }
-
-  // Open on init whois sqlite3 database.
-  utils.log('Opening / initializing whois cache database...')
-  whoisDb.openOrCreate()
 
   utils.startTime('Test duration')
   utils.log('Starting the test...')
@@ -87,40 +82,16 @@ const iPadPro = devices['iPad Pro landscape'];
 
   // If -l (=long) is set --> Collect whois data
   if (argv.l) {
+    // Open on init whois sqlite3 database.
+    utils.log('Opening / initializing whois cache database...')
+    await whoisDb.openOrCreate()
+
     utils.log('Collecting whois data for cross-domains...')
-    let collectedWhoisData = []
-    for (let key in data.resources) {
-      if (data.resources.hasOwnProperty(key)) {
-        utils.log(`Collecting whois data of ${key} sources...`)
-        await new Promise(resolve => {
-          // Limit concurrent whois data.resources to 30
-          async.mapLimit(data.resources[key].requests, 30, async (urlObj) => {
-            let rootDomain = utils.getRootDomain(urlObj.url)
+    data = await utils.collectWhoisData(data)
 
-            // Fetch whois data only for cross-origins
-            if (urlObj.crossOrigin && !utils.whoisDataValid(collectedWhoisData[rootDomain])) {
-              let whoisData = await utils.getOwnerData(rootDomain)
-              if (utils.whoisDataValid(whoisData)) {
-                collectedWhoisData[rootDomain] = whoisData
-              }
-            }
-
-            if (urlObj.crossOrigin) {
-              urlObj.ownerData = collectedWhoisData[rootDomain]
-            }
-          }, (err, results) => {
-            if (err) {
-              utils.log(err)
-            }
-            resolve()
-          })
-        })
-      }
-    }
+    // Close the database as we don't need it anymore.
+    whoisDb.close()
   }
-
-  // Close the database as we don't need it anymore.
-  whoisDb.close()
 
   // Print results to stdout based on selected output.
   utils.log('Printing results...')
