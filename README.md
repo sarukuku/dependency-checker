@@ -5,12 +5,14 @@ A command line tool that checks your web page's dependencies, what percentage of
 Clone or download the repository and run `yarn` in it.
 
 ## Dependencies
-The app has been tested only on a macOS High Sierra and has the followind dependencies:
+The app has been tested on macOS High Sierra and Ubuntu 17.10. It has the followind dependencies:
 - availability of `/bin/bash`
 - availability of `yarn` command on `/bin/bash`
 - availability of `whois`command on `/bin/bash` 
 - node version >= 9.3.0
 - a good network connection
+
+If you're running this on Ubuntu puppeteer requires a few dependencies. More of them can be read from [here](https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md).
 
 ## How to use
 Basic test.
