@@ -15,7 +15,7 @@ const iPadPro = devices['iPad Pro landscape'];
 
   utils.startTime('Test duration')
   utils.log('Starting the test...')
-  const browser = await puppeteer.launch()
+  const browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']})
   const page = await browser.newPage()
   await page.emulate(iPadPro)
 
