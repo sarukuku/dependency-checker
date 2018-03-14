@@ -45,7 +45,7 @@ const iPadPro = devices['iPad Pro landscape'];
 
   // Navigate to page
   utils.log('Loading page...')
-  await page.goto(argv.url)
+  await page.goto(argv.url, { timeout: 60000 })
 
   // Wait for given amount in ms
   if (argv.wait) {
