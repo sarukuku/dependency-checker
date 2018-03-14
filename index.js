@@ -45,7 +45,18 @@ const iPadPro = devices['iPad Pro landscape'];
 
   // Navigate to page
   utils.log('Loading page...')
-  await page.goto(argv.url, { timeout: 120000 })
+  let errors = []
+  await page.goto(argv.url, { timeout: 120000 }).catch(async e => {
+    errors.push(e)
+    utils.log(`Error: Couldn't navigate to ${argv.url}`)
+  })
+
+  // If errors happened then we'll need to terminate
+  if (errors.length > 0) {
+    await page.close()
+    await browser.close()
+    return 'navigationError'
+  }
 
   // Wait for given amount in ms
   if (argv.wait) {
@@ -57,8 +68,9 @@ const iPadPro = devices['iPad Pro landscape'];
   const finalUrl = await page.url()
   utils.log(`URL given as a parameter: ${argv.url} Document downloaded from URL: ${finalUrl}`)
 
-  // Close the page
+  // Close the page & browser
   utils.log('Closing the page...')
+  await page.close()
   await browser.close()
 
   // Figure out the compare to origins
